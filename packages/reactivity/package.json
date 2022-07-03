@@ -10,7 +10,7 @@
   "author": "",
   "license": "ISC",
   "buildOptions": {
-    "name": "varReactivity",
+    "name": "VueReactivity",
     "format": [
       ""
     ]
