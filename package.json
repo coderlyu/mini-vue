@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "dev": "node scripts/dev.js reactivity -f global",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -16,5 +17,10 @@
   "bugs": {
     "url": "https://github.com/coderlyu/mini-vue/issues"
   },
-  "homepage": "https://github.com/coderlyu/mini-vue#readme"
+  "homepage": "https://github.com/coderlyu/mini-vue#readme",
+  "devDependencies": {
+    "esbuild": "^0.14.48",
+    "minimist": "^1.2.6",
+    "typescript": "^4.7.4"
+  }
 }
