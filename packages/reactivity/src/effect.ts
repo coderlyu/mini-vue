@@ -13,7 +13,7 @@ export class ReactiveEffect {
     if (!this.active) {
       return this.fn()
     }
-
+    this.active = true
     try {
       this.parent = activeEffect // 保存父级 effect
       // 依赖收集，核心就是将当前的 effect 和稍后渲染的属性关联在一起
@@ -60,7 +60,8 @@ export function trigger(target, type, key, value, oldValue) {
 
   effects.forEach((effect) => {
     // 在执行 effect时，如果有要执行自己，需要屏蔽掉，不无限调用
-    if (effect !== activeEffect) effect.run()
+    // if (effect !== activeEffect)
+    effect.run()
   })
 }
 

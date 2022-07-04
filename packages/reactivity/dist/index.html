@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>依赖收集</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script src="./reactivity.global.js"></script>
+    <script>
+      const { effect, reactive } = VueReactivity
+      const state = reactive({
+        name: 'coderly',
+        age: 18,
+      })
+      effect(() => {
+        document.getElementById(
+          'app'
+        ).innerHTML = `我是：${state.name}；今年${state.age}岁`
+        console.log(state.age)
+      })
+
+      // 修改值
+      setTimeout(() => {
+        state.age++
+      }, 2000)
+    </script>
+  </body>
+</html>
