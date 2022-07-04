@@ -1,5 +1,5 @@
 import { isObject } from '@vue/shared'
-import { mutableHandlers, ReactiveFlags } from './baseHandler'
+import { mutableHandlers, ReactiveFlags } from './baseHandlers'
 // 只能做对象的代理
 const reactiveMap = new WeakMap() // key 只能是对象（弱引用）
 
