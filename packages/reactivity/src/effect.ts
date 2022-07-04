@@ -3,6 +3,14 @@
  */
 export let activeEffect = undefined
 
+function cleanupEffect(effect) {
+  const { deps } = effect
+  deps.forEach((dep) => {
+    dep.delete(effect)
+  })
+  effect.deps.length = 0
+}
+
 export class ReactiveEffect {
   public parent = null // 父级 effect
   public deps = [] // 记录依赖了哪些属性
@@ -13,11 +21,13 @@ export class ReactiveEffect {
     if (!this.active) {
       return this.fn()
     }
-    this.active = true
     try {
       this.parent = activeEffect // 保存父级 effect
       // 依赖收集，核心就是将当前的 effect 和稍后渲染的属性关联在一起
       activeEffect = this
+
+      // 清空之前收集的依赖，重新收集
+      cleanupEffect(this)
 
       // 当稍后调用取值操作的时候，就可以获取到这个全局的 activeEffect
       return this.fn()
@@ -58,10 +68,13 @@ export function trigger(target, type, key, value, oldValue) {
   let effects = depsMap.get(key)
   if (!effects) return
 
+  // 先拷贝一份，避免死循环，（先删除收集的依赖，再重新收集依赖）
+  effects = new Set(effects)
+
   effects.forEach((effect) => {
     // 在执行 effect时，如果有要执行自己，需要屏蔽掉，不无限调用
     // if (effect !== activeEffect)
-    effect.run()
+    // effect.run()
   })
 }
 
