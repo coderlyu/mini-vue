@@ -17,29 +17,35 @@
         shouldRender: true,
         name: 'coderly',
         age: 18,
+        address: {
+          city: 'hangzhou',
+          province: 'zhejiang',
+        },
       })
       const runner = effect(() => {
-        document.getElementById('app').innerHTML = state.shouldRender
-          ? `我是：${state.name}；今年${state.age}岁`
-          : state.name
+        document.getElementById('app').innerHTML = `今年${state.age}岁`
       })
       // 清空收集的依赖
       runner.effect.stop()
       setTimeout(() => {
-        state.shouldRender = false
-        console.log('state改变了----')
+        state.age = 20
+        console.log('第一个state改变了----')
         setTimeout(() => {
-          console.log('现在才开始渲染哦')
+          console.log('第一个state，现在才开始渲染哦')
           runner() // 重新渲染
         }, 2000)
       }, 2000)
+      console.log(state.address)
     </script>
     <script>
       let waiting = false
+      const state1 = reactive({
+        name: 'coderly',
+      })
       // 自定义effect调度
       const runner1 = effect(
         () => {
-          document.getElementById('app1').innerHTML = state.name
+          document.getElementById('app1').innerHTML = state1.name
         },
         {
           scheduler() {
@@ -47,17 +53,19 @@
               waiting = true
               setTimeout(() => {
                 // 这里才开始执行重新渲染
-                runner1.run()
+                console.log('第二个state开始渲染了。。。')
+
+                runner1()
                 waiting = false
               }, 1000)
             }
           },
         }
       )
-      state.name = 'xingyan'
-      state.name = '哈哈哈'
-      state.name = '你好哇'
-      state.name = '我是最新的值哦'
+      state1.name = 'xingyan'
+      state1.name = '哈哈哈'
+      state1.name = '你好哇'
+      state1.name = '我是最新的值哦'
     </script>
   </body>
 </html>

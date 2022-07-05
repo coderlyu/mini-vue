@@ -1,4 +1,6 @@
+import { isObject } from '@vue/shared'
 import { track, trigger } from './effect'
+import { reactive } from './reactive'
 export enum ReactiveFlags {
   IS_REACTIVE = '__v_isReactive',
 }
@@ -9,7 +11,12 @@ export const mutableHandlers = {
 
     track(target, 'get', key)
 
-    return Reflect.get(target, key, receiver)
+    let result = Reflect.get(target, key, receiver)
+
+    // 深度代理实现，性能好，取值就可以进行代理
+    if (isObject(result)) return reactive(result)
+
+    return result
   },
   set(target, key, value, receiver) {
     // 去代理上设置值，执行set
