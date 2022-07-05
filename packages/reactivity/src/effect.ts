@@ -15,7 +15,7 @@ export class ReactiveEffect {
   public parent = null // 父级 effect
   public deps = [] // 记录依赖了哪些属性
   public active = true // 是否激活状态
-  constructor(public fn) {}
+  constructor(public fn, public scheduler) {}
   run() {
     // 如果是非激活的情况，只需要执行函数，不需要进行依赖收集
     if (!this.active) {
@@ -34,6 +34,12 @@ export class ReactiveEffect {
     } catch (error) {
       activeEffect = this.parent
       //   this.parent = null
+    }
+  }
+  stop() {
+    if (this.active) {
+      this.active = false
+      cleanupEffect(this) // 停止 effect 的收集
     }
   }
 }
@@ -74,14 +80,23 @@ export function trigger(target, type, key, value, oldValue) {
   effects.forEach((effect) => {
     // 在执行 effect时，如果有要执行自己，需要屏蔽掉，不无限调用
     // if (effect !== activeEffect)
-    // effect.run()
+    if (effect.scheduler) {
+      effect.scheduler()
+    } else {
+      effect.run()
+    }
   })
 }
 
-export function effect(fn) {
+export function effect(fn, options: any = {}) {
   // fn可以根据状态变化 重新执行，effect可以嵌套着写
 
-  const _effect = new ReactiveEffect(fn) // 创建响应式的effect
+  const _effect = new ReactiveEffect(fn, options.scheduler) // 创建响应式的effect
 
   _effect.run() // 默认先执行一次
+
+  const runner = _effect.run.bind(_effect) // 绑定this指向
+  runner.effect = _effect // 将 effect 挂在到 runner 函数上
+
+  return runner
 }
