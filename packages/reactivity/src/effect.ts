@@ -58,12 +58,18 @@ export function track(target, type, key) {
   if (!dep) {
     depsMap.set(key, (dep = new Set()))
   }
-  let shouldTrack = !dep.has(activeEffect) // 去重
-  if (shouldTrack) {
-    dep.add(activeEffect)
+  trackEffect(dep)
+}
 
-    // 让effect记录对应的 dep，稍后清理的时候会用到
-    activeEffect.deps.push(dep)
+export function trackEffect(dep) {
+  if (activeEffect) {
+    let shouldTrack = !dep.has(activeEffect) // 去重
+    if (shouldTrack) {
+      dep.add(activeEffect)
+
+      // 让effect记录对应的 dep，稍后清理的时候会用到
+      activeEffect.deps.push(dep)
+    }
   }
 }
 
@@ -71,9 +77,12 @@ export function trigger(target, type, key, value, oldValue) {
   const depsMap = targetMap.get(target)
   if (!depsMap) return
 
-  let effects = depsMap.get(key)
+  const effects = depsMap.get(key)
+  triggerEffect(effects)
   if (!effects) return
+}
 
+export function triggerEffect(effects) {
   // 先拷贝一份，避免死循环，（先删除收集的依赖，再重新收集依赖）
   effects = new Set(effects)
 

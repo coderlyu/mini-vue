@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>computed</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script src="./reactivity.global.js"></script>
+    <script>
+      const { effect, reactive, computed } = VueReactivity
+      const state = reactive({
+        name: 'coderly',
+        age: 18,
+      })
+      const fullInfo = computed(() => {
+        return state.name + '---' + state.age
+      })
+      effect(() => {
+        // 期望 每次执行 effect 的时候都可以清理一遍依赖，重新收集
+        console.log('render')
+        document.getElementById('app').innerHTML = fullInfo.value
+      })
+
+      // 修改值
+      setTimeout(() => {
+        state.age = 20
+      }, 2000)
+    </script>
+  </body>
+</html>
