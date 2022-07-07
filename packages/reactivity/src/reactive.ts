@@ -23,3 +23,7 @@ export function reactive(target) {
   reactiveMap.set(target, exisitProxy)
   return proxy
 }
+
+export function isReactive(value) {
+  return !!(value && value[ReactiveFlags.IS_REACTIVE])
+}
