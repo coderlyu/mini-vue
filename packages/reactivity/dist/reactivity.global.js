@@ -214,9 +214,15 @@ var VueReactivity = (() => {
     } else if (isFunction(source))
       getter = source;
     let oldValue;
+    let cleanup;
+    const onCleanup = (fn) => {
+      cleanup = fn;
+    };
     const job = () => {
+      if (cleanup)
+        cleanup();
       const newValue = effect2.run();
-      cb(newValue, oldValue);
+      cb(newValue, oldValue, onCleanup);
       oldValue = newValue;
     };
     const effect2 = new ReactiveEffect(getter, job);

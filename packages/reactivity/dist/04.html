@@ -15,16 +15,31 @@
         name: 'coderly',
         age: 18,
       })
-      document.getElementById('app').innerHTML = state.name + '---' + state.age
-      watch(state, () => {
-        document.getElementById('app').innerHTML =
-          state.name + '---' + state.age
+      const delay = () => {
+        return new Promise((resolve) => {
+          setTimeout(() => {
+            resolve()
+          }, 1000)
+        })
+      }
+      document.getElementById('app').innerHTML = state.age
+      watch(state, async (newVal, oldVal, onCleanup) => {
+        let clear = false
+        onCleanup(() => {
+          clear = true
+        })
+        await delay()
+        if (!clear) {
+          // 仅渲染一次
+          console.log('仅渲染一次')
+          document.getElementById('app').innerHTML = state.age
+        }
       })
 
       // 修改值
-      setTimeout(() => {
-        state.age = 20
-      }, 2000)
+      state.age = 20
+      state.age = 21
+      state.age = 22
     </script>
   </body>
 </html>

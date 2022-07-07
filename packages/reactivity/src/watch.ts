@@ -11,9 +11,14 @@ export function watch(source, cb) {
     getter = () => traversal(source)
   } else if (isFunction(source)) getter = source
   let oldValue
+  let cleanup
+  const onCleanup = (fn) => {
+    cleanup = fn
+  }
   const job = () => {
+    if (cleanup) cleanup()
     const newValue = effect.run()
-    cb(newValue, oldValue)
+    cb(newValue, oldValue, onCleanup)
     oldValue = newValue
   }
   const effect = new ReactiveEffect(getter, job)
