@@ -23,6 +23,7 @@ var VueReactivity = (() => {
     computed: () => computed,
     effect: () => effect,
     reactive: () => reactive,
+    ref: () => ref,
     watch: () => watch
   });
 
@@ -75,9 +76,9 @@ var VueReactivity = (() => {
     if (!dep) {
       depsMap.set(key, dep = /* @__PURE__ */ new Set());
     }
-    trackEffect(dep);
+    trackEffects(dep);
   }
-  function trackEffect(dep) {
+  function trackEffects(dep) {
     if (activeEffect) {
       let shouldTrack = !dep.has(activeEffect);
       if (shouldTrack) {
@@ -91,11 +92,11 @@ var VueReactivity = (() => {
     if (!depsMap)
       return;
     const effects = depsMap.get(key);
-    triggerEffect(effects);
+    triggerEffects(effects);
     if (!effects)
       return;
   }
-  function triggerEffect(effects) {
+  function triggerEffects(effects) {
     effects = new Set(effects);
     effects.forEach((effect2) => {
       if (effect2.scheduler) {
@@ -175,12 +176,12 @@ var VueReactivity = (() => {
       this.effect = new ReactiveEffect(getter, () => {
         if (!this._dirty) {
           this._dirty = true;
-          triggerEffect(this.dep);
+          triggerEffects(this.dep);
         }
       });
     }
     get value() {
-      trackEffect(this.dep);
+      trackEffects(this.dep);
       if (this._dirty) {
         this._dirty = false;
         this._value = this.effect.run();
@@ -237,6 +238,32 @@ var VueReactivity = (() => {
     for (const key in value) {
       traversal(value[key], set);
     }
+  }
+
+  // packages/reactivity/src/ref.ts
+  var RefImpl = class {
+    constructor(value) {
+      this.dep = /* @__PURE__ */ new Set();
+      this.__v_isRef = true;
+      this._value = toReactive(value);
+    }
+    get value() {
+      trackEffects(this.dep);
+      return this._value;
+    }
+    set value(newValue) {
+      if (newValue !== this.rawValue) {
+        this._value = toReactive(newValue);
+        this.rawValue = newValue;
+        triggerEffects(this.dep);
+      }
+    }
+  };
+  function toReactive(value) {
+    return isObject(value) ? reactive(value) : value;
+  }
+  function ref(value) {
+    return new RefImpl(value);
   }
   return __toCommonJS(src_exports);
 })();

@@ -1,5 +1,5 @@
 import { isFunction } from '@vue/shared'
-import { ReactiveEffect, track, trackEffect, triggerEffect } from './effect'
+import { ReactiveEffect, track, trackEffects, triggerEffects } from './effect'
 
 export class ComputedRef {
   public effect
@@ -16,13 +16,13 @@ export class ComputedRef {
         this._dirty = true
 
         // 实现一个触发更新
-        triggerEffect(this.dep)
+        triggerEffects(this.dep)
       }
     })
   }
   get value() {
     // 依赖收集
-    trackEffect(this.dep)
+    trackEffects(this.dep)
     if (this._dirty) {
       // 值是脏的
       this._dirty = false // 只有第一次或依赖的值变化了，才需要走到这

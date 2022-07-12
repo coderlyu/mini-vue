@@ -58,10 +58,10 @@ export function track(target, type, key) {
   if (!dep) {
     depsMap.set(key, (dep = new Set()))
   }
-  trackEffect(dep)
+  trackEffects(dep)
 }
 
-export function trackEffect(dep) {
+export function trackEffects(dep) {
   if (activeEffect) {
     let shouldTrack = !dep.has(activeEffect) // 去重
     if (shouldTrack) {
@@ -78,11 +78,11 @@ export function trigger(target, type, key, value, oldValue) {
   if (!depsMap) return
 
   const effects = depsMap.get(key)
-  triggerEffect(effects)
+  triggerEffects(effects)
   if (!effects) return
 }
 
-export function triggerEffect(effects) {
+export function triggerEffects(effects) {
   // 先拷贝一份，避免死循环，（先删除收集的依赖，再重新收集依赖）
   effects = new Set(effects)
 
