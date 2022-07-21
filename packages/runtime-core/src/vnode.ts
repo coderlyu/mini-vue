@@ -1,7 +1,14 @@
 import { isArray, isString, ShapeFlags } from '@vue/shared'
-
+export const Text = Symbol('Text')
 export function isVnode(vnode) {
   return !!(vnode && vnode.__v_isVnode)
+}
+
+export function isSameVnode(n1, n2) {
+  // 判断两个虚拟节点是否是相同的
+  // 标签名相同
+  // key相同
+  return n1.type === n2.type && n1.key === n2.key
 }
 
 export function createVnode(type, props?, children?) {
