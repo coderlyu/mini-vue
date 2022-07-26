@@ -15,16 +15,17 @@ export function createRenderer(renderOptions) {
     createText: hostCreateText,
   } = renderOptions
 
-  const normalize = (child) => {
-    if (isString(child)) {
-      return createVnode(Text, null, child)
+  const normalize = (children, i) => {
+    if (isString(children[i])) {
+      let vnode = createVnode(Text, null, children[i])
+      children[i] = vnode
     }
-    return child
+    return children[i]
   }
 
   const mountChildren = (children, container) => {
     for (let i = 0; i < children.length; i++) {
-      const child = normalize(children[i])
+      const child = normalize(children, i)
       patch(null, child, container)
     }
   }
@@ -74,13 +75,51 @@ export function createRenderer(renderOptions) {
     }
   }
 
+  const unmountChildren = (children) => {
+    for (let i = 0; i < children.length; i++) {
+      unmount(children[i])
+    }
+  }
   const patchChildren = (n1, n2, el) => {
     // 比较两个虚拟节点的字节点的差异
     const c1 = n1.children
     const c2 = n2.children
+    const prevShapeFlag = n1.shapeFlag
+
+    const shapeFlag = n2.shapeFlag
     // 文本、null、数组
 
     // 比较两个字节点的差异
+    if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
+      if (prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+        unmountChildren(c1) // 文本和数组
+      }
+      if (c1 !== c2) {
+        hostSetElementText(el, c2) // 文本和文本
+      }
+    } else {
+      // 现在是数组为空
+      if (prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+        if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+          // 数组和数组
+          // diff算法
+        } else {
+          // 数组和文本
+          // 现在不是数组（文本和空）
+          unmountChildren(c1)
+        }
+      } else {
+        //
+        if (prevShapeFlag & ShapeFlags.TEXT_CHILDREN) {
+          // 空和文本
+          hostSetElementText(el, '')
+        }
+        if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+          // 空 数组
+          mountChildren(c2, el)
+        }
+      }
+    }
   }
 
   const patchElement = (n1, n2) => {
