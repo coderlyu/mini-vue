@@ -30,7 +30,7 @@ export function createRenderer(renderOptions) {
     }
   }
 
-  const mountElement = (vnode, container) => {
+  const mountElement = (vnode, container, anchor) => {
     const { type, props, shapeFlag, children } = vnode
     const el = (vnode.el = hostCreateElement(type)) // 将真实元素挂载到虚拟节点上
     if (props) {
@@ -46,7 +46,7 @@ export function createRenderer(renderOptions) {
       mountChildren(children, el)
     }
 
-    hostInsert(el, container)
+    hostInsert(el, container, anchor)
   }
 
   const processText = (n1, n2, container) => {
@@ -70,7 +70,7 @@ export function createRenderer(renderOptions) {
     for (const key in oldProps) {
       if (newProps[key] === null) {
         // 删除
-        hostPatchProp(el, key, oldProps[key], null)
+        hostPatchProp(el, key, oldProps[key], undefined)
       }
     }
   }
@@ -78,6 +78,94 @@ export function createRenderer(renderOptions) {
   const unmountChildren = (children) => {
     for (let i = 0; i < children.length; i++) {
       unmount(children[i])
+    }
+  }
+  const patchKeyedChildren = (c1, c2, el) => {
+    let i = 0,
+      e1 = c1.length - 1,
+      e2 = c2.length - 1
+
+    // 从前比
+    while (i <= e1 && i <= e2) {
+      const n1 = c1[i]
+      const n2 = c2[i]
+      if (isSameVnode(n1, n2)) {
+        patch(n1, n2, el)
+      } else {
+        // 不一样了
+        break
+      }
+      i++
+    }
+    // 从后比
+    while (i <= e1 && i <= e2) {
+      const n1 = c1[e1]
+      const n2 = c2[e2]
+      if (isSameVnode(n1, n2)) {
+        patch(n1, n2, el)
+      } else {
+        break
+      }
+      e1--
+      e2--
+    }
+    // i要比e1大说明有新增的
+    // i和 e2之间的是新增的部分
+    if (i > e1) {
+      if (i <= e2) {
+        while (i <= e2) {
+          const nextPos = e2 + 1
+          // 根据下一个的索引来看参照物
+          const anchor = nextPos < c2.length ? c2[nextPos].el : null
+          patch(null, c2[i], el, anchor)
+          i++
+        }
+      }
+    } else if (i > e2) {
+      // 卸载
+      // i要比e2大说明有要卸载的
+      // i和 e1之间的是卸载的部分
+      if (i <= e1) {
+        while (i <= e1) {
+          unmount(c1[i])
+          i++
+        }
+      }
+    }
+    // 乱序比较
+    let s1 = i,
+      s2 = i
+    const keyToNewIndexMap = new Map()
+    for (let i = s2; i < e2; i++) {
+      keyToNewIndexMap.set(c2[i].key, i)
+    }
+    // 循环老的元素，看一下新的里面有没有，如果有说明要比较差异，没有就要添加到列表中，老的有新的没有要删除
+    const toBePatched = e2 - s2 + 1
+    const newIndexToOldIndexMap = new Array(toBePatched).fill(0) // 记录是否对比过的映射表
+    for (let i = s1; i < e1; i++) {
+      const oldChild = c1[i] // 老节点
+      let newIndex = keyToNewIndexMap.get(oldChild.key)
+      if (newIndex === undefined) {
+        unmount(oldChild)
+      } else {
+        // 新的位置对应老的位置，如果数组里放的值>0说明以及patch过了
+        newIndexToOldIndexMap[newIndex - s2] = i + 1 // 用来标记当前以及patch过的结果
+        patch(oldChild, c2[newIndex], el)
+      }
+    }
+
+    // 需要移动位置
+    for (let i = toBePatched - 1; i >= 0; i--) {
+      const index = i + s2
+      let current = c2[index]
+      let anchor = index + 1 < c2.length ? c2[index + 1] : null
+      // hostInsert(current.el, el)
+      if (newIndexToOldIndexMap[i] === 0) {
+        patch(null, current, el, anchor)
+      } else {
+        // 以及对比过属性和儿子了
+        hostInsert(current.el, el, anchor)
+      }
     }
   }
   const patchChildren = (n1, n2, el) => {
@@ -103,6 +191,7 @@ export function createRenderer(renderOptions) {
         if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
           // 数组和数组
           // diff算法
+          patchKeyedChildren(c1, c2, el)
         } else {
           // 数组和文本
           // 现在不是数组（文本和空）
@@ -134,17 +223,17 @@ export function createRenderer(renderOptions) {
     patchChildren(n1, n2, el)
   }
 
-  const processElement = (n1, n2, container) => {
+  const processElement = (n1, n2, container, anchor = null) => {
     if (n1 === null) {
       // 初次渲染
-      mountElement(n2, container)
+      mountElement(n2, container, anchor)
     } else {
       // 更新流程
-      patchElement()
+      patchElement(n1, n2)
     }
   }
 
-  const patch = (n1, n2, container) => {
+  const patch = (n1, n2, container, anchor = null) => {
     // 上一个旧node
     // n2 可能是一个文本
     if (n1 === n2) return
@@ -163,7 +252,7 @@ export function createRenderer(renderOptions) {
         break
       default:
         if (shapeFlag & ShapeFlags.ELEMENT) {
-          processElement(n1, n2, container)
+          processElement(n1, n2, container, anchor)
         }
         break
     }
