@@ -15,7 +15,7 @@ export class ReactiveEffect {
   public parent = null // 父级 effect
   public deps = [] // 记录依赖了哪些属性
   public active = true // 是否激活状态
-  constructor(public fn, public scheduler) {}
+  constructor(public fn, public scheduler?) {}
   run() {
     // 如果是非激活的情况，只需要执行函数，不需要进行依赖收集
     if (!this.active) {
