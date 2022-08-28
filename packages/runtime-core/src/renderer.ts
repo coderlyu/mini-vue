@@ -142,6 +142,7 @@ export function createRenderer(renderOptions) {
     // 循环老的元素，看一下新的里面有没有，如果有说明要比较差异，没有就要添加到列表中，老的有新的没有要删除
     const toBePatched = e2 - s2 + 1
     const newIndexToOldIndexMap = new Array(toBePatched).fill(0) // 记录是否对比过的映射表
+
     for (let i = s1; i < e1; i++) {
       const oldChild = c1[i] // 老节点
       let newIndex = keyToNewIndexMap.get(oldChild.key)
@@ -154,7 +155,11 @@ export function createRenderer(renderOptions) {
       }
     }
 
+    // 优化
+    // 获取最长递增子序列
+    const increment = getSequence(newIndexToOldIndexMap)
     // 需要移动位置
+    let j = increment.length - 1
     for (let i = toBePatched - 1; i >= 0; i--) {
       const index = i + s2
       let current = c2[index]
@@ -164,7 +169,12 @@ export function createRenderer(renderOptions) {
         patch(null, current, el, anchor)
       } else {
         // 以及对比过属性和儿子了
-        hostInsert(current.el, el, anchor)
+        if (i != increment[i]) {
+          // 目前无论如何都做了一遍倒叙插入，其实可以不用的，可以根据刚才的数组来减少插入次数
+          hostInsert(current.el, el, anchor)
+        } else {
+          j--
+        }
       }
     }
   }
@@ -277,4 +287,45 @@ export function createRenderer(renderOptions) {
   return {
     render,
   }
+}
+
+function getSequence(arr: number[]): number[] {
+  const p = arr.slice()
+  const result = [0]
+  let i, j, u, v, c
+  const len = arr.length
+  for (i = 0; i < len; i++) {
+    const arrI = arr[i]
+    if (arrI !== 0) {
+      j = result[result.length - 1]
+      if (arr[j] < arrI) {
+        p[i] = j
+        result.push(i)
+        continue
+      }
+      u = 0
+      v = result.length - 1
+      while (u < v) {
+        c = (u + v) >> 1
+        if (arr[result[c]] < arrI) {
+          u = c + 1
+        } else {
+          v = c
+        }
+      }
+      if (arrI < arr[result[u]]) {
+        if (u > 0) {
+          p[i] = result[u - 1]
+        }
+        result[u] = i
+      }
+    }
+  }
+  u = result.length
+  v = result[u - 1]
+  while (u-- > 0) {
+    result[u] = v
+    v = p[v]
+  }
+  return result
 }
