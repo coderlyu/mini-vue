@@ -1,6 +1,6 @@
 import { isString, ShapeFlags } from '@vue/shared'
 import { patchProp as hostPatchProp } from 'packages/runtime-dom/src/patchProp'
-import { createVnode, isSameVnode, Text } from './vnode'
+import { createVnode, Fragment, isSameVnode, Text } from './vnode'
 
 export function createRenderer(renderOptions) {
   const {
@@ -243,6 +243,14 @@ export function createRenderer(renderOptions) {
     }
   }
 
+  const processFragment = (n1, n2, container) => {
+    if (n1 === null) {
+      mountChildren(n2.children, container)
+    } else {
+      patchChildren(n1, n2, container)
+    }
+  }
+
   const patch = (n1, n2, container, anchor = null) => {
     // 上一个旧node
     // n2 可能是一个文本
@@ -259,6 +267,9 @@ export function createRenderer(renderOptions) {
     switch (type) {
       case Text:
         processText(n1, n2, container)
+        break
+      case Fragment: // 无用的标签
+        processFragment(n1, n2, container)
         break
       default:
         if (shapeFlag & ShapeFlags.ELEMENT) {
